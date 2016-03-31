@@ -128,6 +128,27 @@ class ShopperTableViewController: UITableViewController {
 
         return cell
     }
+    
+    //                                                              indexpath maps to whatever list is selcted
+    override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        
+        if let itemsTableViewController =
+        storyboard?.instantiateViewControllerWithIdentifier("ShoppingListItems") as?
+            //casting to a shoppinglisttableviewcontroller (with as)_____________|^|
+            ShoppingListTableViewController {
+                
+                //getting list selected to pass it to the new screen
+            let list = shoppingLists[indexPath.row]
+                
+                itemsTableViewController.managedObjectContext = managedObjectContext
+                itemsTableViewController.selectedShoppingList = list
+                
+                //heres the actual segue
+                navigationController?.pushViewController(itemsTableViewController, animated: true)
+        }
+        
+        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+    }
 
 
     /*

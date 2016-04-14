@@ -19,16 +19,30 @@ class ShopperTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "addShoppingList:")
+        navigationItem.rightBarButtonItems = [UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "addShoppingList:"),
+        UIBarButtonItem(title: "Filter", style: .Plain, target: self, action: "selectFilter:"),
+            UIBarButtonItem(title: "Sort", style: .Plain, target: self, action: "selectSort:")
+        ]
         
         reloadData()
     }
     
     // format this code appropriately, the brackets (and therefore indentation) is unorganized
-    func reloadData() {
+    func reloadData(storeFilter: String? = nil, sortDescriptor: String? = nil) {
         
         //                                entity name to fetch data from
         let fetchRequest = NSFetchRequest(entityName: "ShoppingList")
+        
+        //setup a predicate in order to filter the shopping lists
+        if let storeFilter = storeFilter {//                  c yields case insensitive filter
+            let storePredicate = NSPredicate(format: "store =[c] %@", storeFilter)
+            fetchRequest.predicate = storePredicate
+        }
+        
+        if let sortDescriptor = sortDescriptor {
+            let sort = NSSortDescriptor(key: sortDescriptor, ascending: true)
+            fetchRequest.sortDescriptors = [sort]
+        }
         
         do {
             
@@ -44,6 +58,51 @@ class ShopperTableViewController: UITableViewController {
             fatalError("There was an error fetching shopping lists!")
         
     }
+    }
+    
+    func selectSort(sender: AnyObject?) {
+        
+        let sheet = UIAlertController(title: "Sort", message: "Shopping Lists", preferredStyle: .ActionSheet)
+        
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: {(action) -> Void in }))
+        
+        sheet.addAction(UIAlertAction(title: "By Store", style: .Default, handler: {(action) -> Void in
+            self.reloadData(nil, sortDescriptor: "store")
+        }))
+        sheet.addAction(UIAlertAction(title: "By Name", style: .Default, handler: {(action) -> Void in
+            self.reloadData(nil, sortDescriptor: "name")
+        }))
+
+        sheet.addAction(UIAlertAction(title: "By Date", style: .Default, handler: {(action) -> Void in
+            self.reloadData(nil, sortDescriptor: "date")
+        }))
+        
+        presentViewController(sheet, animated: true, completion: nil)
+
+
+    }
+    
+    func selectFilter(sender: AnyObject?) {
+        let alert = UIAlertController(title: "Filter", message: "Shopping Lists", preferredStyle: .Alert)
+        
+        let filterAction = UIAlertAction(title: "Filter", style: .Default) {
+            (action) -> Void in
+            
+            if let storeTextField = alert.textFields?[0], store = storeTextField.text {
+                self.reloadData(store)
+            }
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .Default) {
+            (action) -> Void in
+            self.reloadData()
+        }
+        
+        alert.addTextFieldWithConfigurationHandler { (textField) in textField.placeholder = "Store"
+        }
+        
+        alert.addAction(filterAction)
+        alert.addAction(cancelAction)
+        presentViewController(alert, animated: true, completion: nil)
     }
     
     func addShoppingList(sender: AnyObject?){

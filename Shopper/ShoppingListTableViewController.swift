@@ -20,10 +20,13 @@ class ShoppingListTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "addShoppingListItem:")
+        navigationItem.rightBarButtonItems = [UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "addShoppingListItem:"), UIBarButtonItem(title: "Filter", style: .Plain, target: self, action: "selectFilter:"),
+            UIBarButtonItem(title: "Sort", style: .Plain, target: self, action: "selectSort:")
+        ]
+
 
         reloadData()
-        
+    
         var totalCost = 0.0
         
         for list in shoppingListItems {
@@ -43,15 +46,100 @@ class ShoppingListTableViewController: UITableViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    func reloadData () {
+    func reloadData (nameFilter: String? = nil, sortDescriptor: String? = nil) {
         
-        if let selectedShoppingList = selectedShoppingList {
-            if let listItems = selectedShoppingList.items?.allObjects as? [ShoppingListItem] {
-                shoppingListItems = listItems
+        
+        let fetchRequest = NSFetchRequest(entityName: "ShoppingListItem")
+        
+        //create a filter for the shopping list
+        let listPredicate = NSPredicate(format: "shoppingList =[c] %@", selectedShoppingList!)
+        
+        
+        // crete a second filter for the shopping list
+        //setup a predicate in order to filter the shopping lists
+        if let nameFilter = nameFilter {//                  c yields case insensitive filter
+            let namePredicate = NSPredicate(format: "name =[c] %@", nameFilter)
+            
+            let compoundPredicate = NSCompoundPredicate(type: NSCompoundPredicateType.AndPredicateType, subpredicates: [listPredicate, namePredicate])
+            
+            fetchRequest.predicate = compoundPredicate
+        }
+        else { fetchRequest.predicate = listPredicate
+        }
+        
+        if let sortDescriptor = sortDescriptor {
+            let sort = NSSortDescriptor(key: sortDescriptor, ascending: true)
+            fetchRequest.sortDescriptors = [sort]
+        }
+        
+        //if let selectedShoppingList = selectedShoppingList {
+          //  if let listItems = selectedShoppingList.items?.allObjects as? [ShoppingListItem] {
+          //      shoppingListItems = listItems
+           // }
+       // }
+        //tableView.reloadData()
+        
+        do {
+            
+            //returns object which is casted to array shopping list and is stored in results
+            if let results = try managedObjectContext.executeFetchRequest(fetchRequest) as?
+                [ShoppingListItem] {
+                    shoppingListItems = results
+                    //not recursive reload data call, this is the call to reload data in the tableview..tableview is an actual control in the storyboard
+                    tableView.reloadData()
+            }
+            
+        } catch {
+            fatalError("There was an error fetching shopping lists!")
+            
+        }
+    }
+    
+    func selectSort(sender: AnyObject?) {
+        
+        let sheet = UIAlertController(title: "Sort", message: "Shopping List Items", preferredStyle: .ActionSheet)
+        
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: {(action) -> Void in }))
+        
+        sheet.addAction(UIAlertAction(title: "By Name", style: .Default, handler: {(action) -> Void in
+            self.reloadData(nil, sortDescriptor: "name")
+        }))
+        sheet.addAction(UIAlertAction(title: "By Price", style: .Default, handler: {(action) -> Void in
+            self.reloadData(nil, sortDescriptor: "price")
+        }))
+        
+        sheet.addAction(UIAlertAction(title: "By Quantity", style: .Default, handler: {(action) -> Void in
+            self.reloadData(nil, sortDescriptor: "quantity")
+        }))
+        
+        presentViewController(sheet, animated: true, completion: nil)
+        
+        
+    }
+    
+    func selectFilter(sender: AnyObject?) {
+        let alert = UIAlertController(title: "Filter", message: "Shopping List Items", preferredStyle: .Alert)
+        
+        let filterAction = UIAlertAction(title: "Filter", style: .Default) {
+            (action) -> Void in
+            
+            if let nameTextField = alert.textFields?[0], name = nameTextField.text {
+                self.reloadData(name)
             }
         }
-        tableView.reloadData()
+        let cancelAction = UIAlertAction(title: "Cancel", style: .Default) {
+            (action) -> Void in
+            self.reloadData()
+        }
+        
+        alert.addTextFieldWithConfigurationHandler { (textField) in textField.placeholder = "Name"
+        }
+        
+        alert.addAction(filterAction)
+        alert.addAction(cancelAction)
+        presentViewController(alert, animated: true, completion: nil)
     }
+
     
     func addShoppingListItem(sender: AnyObject?) {
         

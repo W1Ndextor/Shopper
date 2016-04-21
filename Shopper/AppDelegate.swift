@@ -28,6 +28,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 }
             }
         }
+        //created notif...defining the type of notification
+        let notifyTypes:UIUserNotificationType = UIUserNotificationType.Alert
+        
+        //configure notif settings...defining the settings for the notification
+        let notifSettings:UIUserNotificationSettings = UIUserNotificationSettings(forTypes: notifyTypes, categories: nil)
+        
+        //register notif settings...registering the settings
+        UIApplication.sharedApplication().registerUserNotificationSettings(notifSettings)
+        
         return true
     }
 

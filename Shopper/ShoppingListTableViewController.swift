@@ -39,6 +39,7 @@ class ShoppingListTableViewController: UITableViewController {
             title = "Shopping List Detail"
         }
         
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -160,25 +161,44 @@ class ShoppingListTableViewController: UITableViewController {
                 
                 do {
                     try self.managedObjectContext.save()
+                    self.viewDidLoad()
                 } catch {
                     print("Error saving the managed object context!")
                 }
                 self.reloadData()
             }
         }
+        
+        addAction.enabled = false
     
     
         let cancelAction = UIAlertAction(title: "Cancel", style: .Default) { (action) -> Void in
             
         }
         
+        var nameTextField: UITextField?
+        var priceTextField: UITextField?
+        var quantityTextField: UITextField?
+
+        
         alert.addTextFieldWithConfigurationHandler { (textField) in textField.placeholder = "Name"
+            //initialize the name text field to  the textfield w/in the code block
+            nameTextField = textField
+            
+            NSNotificationCenter.defaultCenter().addObserverForName(UITextFieldTextDidChangeNotification, object: textField, queue: NSOperationQueue.mainQueue()) { (notification) in addAction.enabled = (nameTextField!.text != "" && priceTextField!.text != "" && quantityTextField!.text != "")
+            }
         }
         
         alert.addTextFieldWithConfigurationHandler { (textField) in textField.placeholder = "Price"
+            priceTextField = textField
+            NSNotificationCenter.defaultCenter().addObserverForName(UITextFieldTextDidChangeNotification, object: textField, queue: NSOperationQueue.mainQueue()) { (notification) in addAction.enabled = (nameTextField!.text != "" && priceTextField!.text != "" && quantityTextField!.text != "")
+            }
         }
         
         alert.addTextFieldWithConfigurationHandler { (textField) in textField.placeholder = "Quantity"
+            quantityTextField = textField
+            NSNotificationCenter.defaultCenter().addObserverForName(UITextFieldTextDidChangeNotification, object: textField, queue: NSOperationQueue.mainQueue()) { (notification) in addAction.enabled = (nameTextField!.text != "" && priceTextField!.text != "" && quantityTextField!.text != "")
+            }
         }
         
         alert.addAction(addAction)
@@ -186,6 +206,53 @@ class ShoppingListTableViewController: UITableViewController {
         
         presentViewController(alert, animated: true, completion: nil)
         
+        
+    }
+    
+    
+    func shoppingListDoneNotification () {
+        
+        var done = true
+        
+        for list in shoppingListItems {
+            if list.purchased == false {
+                done = false
+            }
+        }
+        
+        if done == true {
+            //getting the current date
+            let theDate = NSDate()
+            
+            //getting the date component and setting the seconds property to 10 seconds
+            let dateComp = NSDateComponents()
+            dateComp.second = 10
+            
+            //making a calender
+            let cal = NSCalendar.currentCalendar()
+            
+            //adding 10 seconds to the current date...basically saying "we want the alert to go off 10 seconds from the current date
+            let fireDate:NSDate = cal.dateByAddingComponents(dateComp, toDate: theDate, options: NSCalendarOptions.MatchFirst)!
+            
+            //initializing a notification
+            let notification:UILocalNotification = UILocalNotification()
+            
+            //get the name of the shopping ist that has just been completed and storing it in title
+            if let selectedShoppingList = selectedShoppingList {
+                title = selectedShoppingList.name
+            }
+            
+            //we want the body propertiy of out notification to contain the name of the completed shopping list and the word completed
+            notification.alertBody = title! + " completed"
+            
+            
+            //set the fire date proeprty of the ntifcation equal to our fire date variable whic his 10 secs after current date
+            notification.fireDate=fireDate
+            
+            //post the notification
+            UIApplication.sharedApplication().scheduleLocalNotification(notification)
+            
+        }
         
     }
 
@@ -249,13 +316,17 @@ class ShoppingListTableViewController: UITableViewController {
         
         do{
             try self.managedObjectContext.save()
+            self.viewDidLoad()
         } catch {
             print("Error saving the managed object context!")
         }
         
+        
         reloadData()
         
         tableView.deselectRowAtIndexPath(indexPath, animated: true)
+        
+        shoppingListDoneNotification()
     }
     
 
@@ -279,6 +350,7 @@ class ShoppingListTableViewController: UITableViewController {
             
             do {
                 try self.managedObjectContext.save()
+                self.viewDidLoad()
             } catch {
                 print("Error saving the managed object context!")
             }

@@ -125,6 +125,7 @@ class ShopperTableViewController: UITableViewController {
                 //need do catch block because save could cause an error
                 do {
                     try self.managedObjectContext.save()
+                    self.viewDidLoad()
                 } catch {
                     print("Error saving the managed object context!")
                 }
@@ -229,6 +230,7 @@ class ShopperTableViewController: UITableViewController {
             
             do {
                 try self.managedObjectContext.save()
+                self.viewDidLoad()
             } catch {
                 print("Error saving the managed object context!")
             }
